@@ -67,7 +67,7 @@ function addToCart(selectedOptions) {
         let cartStorageUpdate = false
         for (let product of cart) {
             if (product.color === selectedOptions.color && product.id === selectedOptions.id) {
-                product.quantity += selectedOptions.quantity
+                product.quantity += parseInt(selectedOptions.quantity)
                 cartStorageUpdate = true
             }
         }
