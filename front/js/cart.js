@@ -3,34 +3,30 @@ let inLocalStorage = JSON.parse(localStorage.getItem("productToCart"));
 console.log(inLocalStorage);
 
 //Récupération données de l'API
-fetch("http://localhost:3000/api/products")
-    .then(function (response) {
-        return response.json();
-    })
-    .then(
-        function (productsData) {
-            for (const data of productsData) {
-                for (const item of inLocalStorage) {
-                    if (data._id == item.id) {
-                        displayProduct(data, item)
-                        totalPrice(data, item)
-                    }
-                }
-
-            }
-            modifyProductQuantity(productsData);
-            deleteProduct(productsData);
-            totalQuantity();
-            sendForm();
-        })
-    .catch(function (error) {
-        console.log('fetch error', error);
-    });
+if (inLocalStorage) {
+    for (const item of inLocalStorage) {
+        //Récupération données de l'API
+        fetch("http://localhost:3000/api/products/" + item.id)
+            .then(function (response) {
+                return response.json();
+            })
+            .then(
+                function (data) {
+                    displayProduct(data, item)
+                    totalPrice(data, item)
+                    modifyProductQuantity()
+                    deleteProduct()
+                })
+            .catch(function (error) {
+                console.log('fetch error', error);
+            });
+    }
+    totalQuantity();
+    sendForm();
+}
 
 
-
-/** Affichage des produits dans le panier */
-function displayProduct(product, item) {
+function displayProduct(data, item) {
 
     //Récupération élément du panier
     const itemId = item.id
@@ -48,8 +44,8 @@ function displayProduct(product, item) {
     const imgContainer = document.createElement('div')
     imgContainer.classList.add("cart__item__img")
     const productImg = document.createElement('img')
-    productImg.setAttribute('src', product.imageUrl)
-    productImg.setAttribute('alt', product.altTxt)
+    productImg.setAttribute('src', data.imageUrl)
+    productImg.setAttribute('alt', data.altTxt)
     cartItem.appendChild(imgContainer)
     imgContainer.appendChild(productImg)
 
@@ -63,13 +59,13 @@ function displayProduct(product, item) {
 
     //Description du produit
     const productName = document.createElement('h2')
-    productName.innerHTML = product.name
+    productName.innerHTML = data.name
 
     const productColor = document.createElement('p')
     productColor.innerHTML = itemColor
 
     const productPrice = document.createElement('p')
-    productPrice.innerHTML = product.price + ' €'
+    productPrice.innerHTML = data.price + ' €'
 
     cartItemDescription.appendChild(productName)
     cartItemDescription.appendChild(productColor)
@@ -107,7 +103,7 @@ function displayProduct(product, item) {
 }
 
 /** Modifier la quantité d'un produit*/
-function modifyProductQuantity(productsData) {
+function modifyProductQuantity() {
     // Cibler les input de quantité
     const quantityToCheck = document.querySelectorAll('.itemQuantity')
     // Pour chaque input, au clic ..
@@ -127,7 +123,7 @@ function modifyProductQuantity(productsData) {
                     foundProduct.quantity = products.value
                     localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
                     totalQuantity()
-                    updateTotalPrice(productsData)
+                    updateTotalPrice()
                 }
             } else {
                 alert("Veuillez sélectionner une quantité comprise entre 1 et 100.")
@@ -137,7 +133,7 @@ function modifyProductQuantity(productsData) {
 }
 
 /** Supprimer un produit */
-function deleteProduct(productsData) {
+function deleteProduct() {
     // Cibler les boutons suppr
     let deleteBtn = document.querySelectorAll(".deleteItem")
     // Pour chaque bouton, au clic ..
@@ -149,15 +145,14 @@ function deleteProduct(productsData) {
             const productToDeleteId = productToDelete.dataset.id
             const productToDeleteColor = productToDelete.dataset.color
             //Cible et supprime le produit dans le LocalStorage
-            let productToRemove = inLocalStorage.filter((item) => item.id !== productToDeleteId || item.color !== productToDeleteColor);
+            let productToRemove = inLocalStorage.filter((item) => item.id !== productToDeleteId || item.color !== productToDeleteColor)
             inLocalStorage = productToRemove
             localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
             totalQuantity()
-            updateTotalPrice(productsData)
+            updateTotalPrice()
         })
     }
 }
-
 
 /** Quantité totale du panier */
 function totalQuantity() {
@@ -172,33 +167,42 @@ function totalQuantity() {
 /** Prix total du panier */
 total = 0;
 function totalPrice(data, item) {
-
     productsPrice = item.quantity * data.price
     total += productsPrice
     let totalPrice = document.getElementById('totalPrice')
     totalPrice.innerHTML = total
+
 }
 
-/** Actualisation du prix total du panier après modification ou suppression */
-function updateTotalPrice(productsData) {
-    let updatedTotal = 0;
-    // Récupération id/qty des produits dans le Local Storage
-    for (const item of inLocalStorage) {
-        const idLocalStorage = item.id
-        const qtyLocalStorage = item.quantity
-        // On trouve l'id identique dans le tableaux de l'API
-        const findProducts = productsData.find((element) => element._id === idLocalStorage)
-        // Si même id, on recalcule le prix total
-        if (findProducts) {
-            const productsPrice = findProducts.price * qtyLocalStorage
-            updatedTotal += productsPrice
-        }
-        let totalPrice = document.getElementById('totalPrice')
-        totalPrice.innerHTML = updatedTotal
+/** Réactualisation du prix après modification ou suppression */
+function updateTotalPrice() {
+    let updatedTotal = 0
+    //Récupération des produits qu'il y a dans le panier
+    for (const product of inLocalStorage) {
+        const idLocalStorage = product.id
+        const qtyLocalStorage = product.quantity
+        //Récupération données API
+        fetch("http://localhost:3000/api/products/")
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function (ApiData) {
+                const findProducts = ApiData.find((element) => element._id === idLocalStorage)
+                //Si même id dans panier + api on recalcule le prix
+                if (findProducts) {
+                    const productsPrice = findProducts.price * qtyLocalStorage
+                    updatedTotal += productsPrice
+                    let updatedTotalPrice = document.getElementById('totalPrice')
+                    updatedTotalPrice.innerHTML = updatedTotal
+                }
+            })
+            .catch(function (error) {
+                console.log('fetch error', error);
+            });
     }
 }
 
-/** Envoi du formulaire */
+
 function sendForm() {
     //Récupération des champs formulaire
     const form = document.querySelector('.cart__order__form')
@@ -208,40 +212,45 @@ function sendForm() {
     const city = document.getElementById('city')
     const email = document.getElementById('email')
 
-    //Au submit du formulaire ...
+    /** Récupérer les données formulaires */
+
+    //Au submit du formulire ...
     form.addEventListener('submit', function (e) {
         e.preventDefault()
 
-        //Vérifier le formulaire
-        checkForm()
+        // Vérification des input formulaire
+        let checked = checkForm()
+        if (checked === true) {
 
-        const contact = {
-            firstName: firstName.value,
-            lastName: lastName.value,
-            address: address.value,
-            city: city.value,
-            email: email.value
+            // si formulaire vérifié création d'un objet contact ...
+            const contact = {
+                firstName: firstName.value,
+                lastName: lastName.value,
+                address: address.value,
+                city: city.value,
+                email: email.value
+            }
+
+            // ... et d'un tableau contenant les produits dans le panier de l'user
+            let products = []
+            for (item of inLocalStorage) {
+                products.push(item.id)
+            }
+
+            const body = {
+                contact, products
+            }
+            // On envoie l'objet et le tableau au back & on vide le local storage
+            sendPost(body)
+            localStorage.removeItem("productToCart");
+
+        } else {
+            checkForm()
         }
-
-        let products = []
-        for (item of inLocalStorage) {
-            products.push(item.id)
-        }
-
-        const body = {
-            contact, products
-        }
-
-        //envoyer le formulaire
-        sendPost(body)
-
-        localStorage.clear();
     })
 }
 
-/** Vérification du formulaire */
-function checkForm() {
-    //Récupération des valeurs de chaque input
+function checkForm() {//Récupération des valeurs de chaque input
     const firstNameValue = firstName.value.trim()
     const lastNameValue = lastName.value.trim()
     const addressValue = address.value.trim()
@@ -256,61 +265,45 @@ function checkForm() {
 
 
     //Vérifications des valeurs de chaque input
-    const masque = "[^A-Za-z]";
-    if (firstNameValue.length < 2 || firstNameValue.length > 15) {
-        firstNameError.style.display = "contents"
+    const textRegex = /^[A-Za-z' -]{2,20}$/;
+    const addressRegex = /^[A-Za-z0-9' -]{5,40}$/
+    const emailRegex = /[a-z0-9]+@[a-z]+\.[a-z]{2,3}/;
+
+    firstNameError.innerHTML = "";
+    lastNameError.innerHTML = "";
+    addressError.innerHTML = "";
+    cityError.innerHTML = "";
+    emailError.innerHTML = "";
+
+    if (!textRegex.test(firstNameValue)) {
         firstNameError.innerHTML = "Veuillez saisir un prénom valide."
-        checkForm()
-    } else if (firstNameValue.match(masque)) {
-        firstNameError.style.display = "contents"
-        firstNameError.innerHTML = "Les chiffres et caractères spéciaux sont interdits pour ce champ."
-        checkForm()
-    } else {
-        firstNameError.style.display = "none";
+        return false
     }
 
-    if (lastNameValue.length < 2 || lastNameValue.length > 20) {
-        lastNameError.style.display = "contents"
-        lastNameError.innerHTML = "Veuillez saisir un nom valide."
-        checkForm()
-    } else if (lastNameValue.match(masque)) {
-        lastNameError.style.display = "contents"
-        lastNameError.innerHTML = "Les chiffres et caractères spéciaux sont interdits pour ce champ."
-        checkForm()
-    } else {
-        lastNameError.style.display = "none"
+    if (!textRegex.test(lastNameValue)) {
+        lastNameError.innerHTML = "Veuillez saisir un nom de famille valide."
+        return false
     }
 
-    if (addressValue.length < 5) {
-        addressError.style.display = "contents"
+    if (!addressRegex.test(addressValue)) {
         addressError.innerHTML = "Veuillez saisir une adresse valide."
-        checkForm()
-    } else {
-        addressError.style.display = "none"
+        return false
     }
 
-    if (cityValue.length < 2) {
-        cityError.style.display = "contents"
+    if (!textRegex.test(cityValue)) {
         cityError.innerHTML = "Veuillez saisir un nom de ville valide."
-        checkForm()
-    } else if (cityValue.match(masque)) {
-        cityError.style.display = "contents"
-        cityError.innerHTML = "Les chiffres et caractères spéciaux sont interdits pour ce champ."
-        checkForm()
-    } else {
-        cityError.style.display = "none"
+        return false
     }
 
-    if (emailValue.length < 6) {
-        emailError.style.display = "contents"
+    if (emailValue.length < 6 || !emailRegex.test(emailValue)) {
         emailError.innerHTML = "Veuillez saisir un e-mail valide."
-        checkForm()
-    } else {
-        emailError.style.display = "none"
+        return false
     }
+
+    return true;
 }
 
-/** Envoi du formulaire */
+/** Fonction d'envoi des infos au backend */
 function sendPost(body) {
     fetch("http://localhost:3000/api/products/order", {
         method: 'POST',
@@ -323,6 +316,7 @@ function sendPost(body) {
             return response.json();
         })
         .then(function (value) {
+            // lorsqu'on récupère la réponse du back on inscrit l'ID dans l'URL de redirection pour la confirmation de commande
             console.log(value);
             let orderId = value.orderId
             window.location.replace('./confirmation.html?' + orderId);

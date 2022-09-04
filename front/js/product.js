@@ -17,7 +17,10 @@ fetch(`http://localhost:3000/api/products/${id}`)
         productToCart = document.getElementById('addToCart');
 
         productToCart.addEventListener("click", function () {
-            selectedProduct();
+            //Récupération des options choisies
+            let selectedOptions = selectedProduct()
+            //Ajout au panier
+            selectedOptions ? addToCart(selectedOptions) : null;
         });
     }
     )
@@ -61,32 +64,43 @@ function fillProduct(product) {
 
 }
 
+/** Fonction pour ajouter le produit au panier */
 function addToCart(selectedOptions) {
+    // Récupération des produits dans le panier
     let cart = JSON.parse(localStorage.getItem("productToCart"));
 
+    //S'il y a déjà des produits dans le panier
     if (cart) {
         let cartStorageUpdate = false
         for (let product of cart) {
+            // comparer pour voir si id & couleur identique
             if (product.color === selectedOptions.color && product.id === selectedOptions.id) {
+                //si oui, ajouter la nouvelle quantité à l'ancienne
                 product.quantity += parseInt(selectedOptions.quantity)
                 cartStorageUpdate = true
             }
         }
         if (!cartStorageUpdate) {
+            //si non, ajouter nouveau produit
             cart.push(selectedOptions);
         }
     } else {
+        //S'il n'y a pas de produits dans le panier, créer un tableau puis push le premier produit
         cart = [];
         cart.push(selectedOptions);
     }
 
+    // Enregistrer à nouveau le local storage
     localStorage.setItem("productToCart", JSON.stringify(cart));
+    alert("Produit ajouté au panier !");
 }
 
+/** Fonction pour récupérer les options sélectionnées par le client */
 function selectedProduct() {
     let selectedColor = document.getElementById("colors").value
     let selectedQuantity = document.getElementById("quantity").value
 
+    // création d'un objet avec l'id, la couleur et la quantité sélectionnée
     let selectedOptions = {
         id: id,
         color: selectedColor,
@@ -96,16 +110,19 @@ function selectedProduct() {
     console.log(selectedOptions)
 
     // si couleur ou quantité bien rempli, on ajoute au panier sinon alerte
-    if (selectedColor != "" && selectedQuantity != "0") {
-        if (selectedQuantity > 0 && selectedQuantity <= 100) {
-            addToCart(selectedOptions)
-            alert("Produit ajouté au panier !")
-        } else { alert("Veuillez sélectionner une quantité comprise entre 1 et 100.") }
-    } else {
+    if (!(selectedColor != "" && selectedQuantity != "0")) {
         alert("Veuillez sélectionner une couleur et/ou une quantité")
+        return;
     }
 
+    if (!(selectedQuantity > 0 && selectedQuantity <= 100)) {
+        alert("Veuillez sélectionner une quantité comprise entre 1 et 100.")
+        return;
+    }
+
+    return selectedOptions
 }
+
 
 
 
