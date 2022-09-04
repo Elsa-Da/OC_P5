@@ -2,28 +2,36 @@
 let inLocalStorage = JSON.parse(localStorage.getItem("productToCart"));
 console.log(inLocalStorage);
 
-for (const item of inLocalStorage) {
-    //Récupération données de l'API
-    fetch(`http://localhost:3000/api/products/${item.id}`)
-        .then(function (response) {
-            return response.json();
-        })
-        .then(function (product) {
-            let qty = item.quantity
-            let prc = product.price
-            displayProduct(product, item);
-            modifyProductQuantity();
-            totalPrice(qty, prc);
-            deleteProduct(qty, prc);
-            totalQuantity(qty, prc);
+//Récupération données de l'API
+fetch("http://localhost:3000/api/products")
+    .then(function (response) {
+        return response.json();
+    })
+    .then(
+        function (productsData) {
+            for (const data of productsData) {
+                for (const item of inLocalStorage) {
+                    if (data._id == item.id) {
+                        displayProduct(data, item)
+                        totalPrice(data, item)
+                    }
+                }
+
+            }
+            modifyProductQuantity(productsData);
+            deleteProduct(productsData);
+            totalQuantity();
             sendForm();
         })
-        .catch(function (error) {
-            console.log('fetch error', error);
-        });
-}
+    .catch(function (error) {
+        console.log('fetch error', error);
+    });
 
+
+
+/** Affichage des produits dans le panier */
 function displayProduct(product, item) {
+
     //Récupération élément du panier
     const itemId = item.id
     const itemColor = item.color
@@ -99,39 +107,37 @@ function displayProduct(product, item) {
 }
 
 /** Modifier la quantité d'un produit*/
-function modifyProductQuantity() {
-    let cart = JSON.parse(localStorage.getItem("productToCart"));
-
+function modifyProductQuantity(productsData) {
     // Cibler les input de quantité
     const quantityToCheck = document.querySelectorAll('.itemQuantity')
-
     // Pour chaque input, au clic ..
     for (let products of quantityToCheck) {
         products.addEventListener('change', function (event) {
             //Cible la quantité modifiée dans le DOM
             products.value = event.target.value
-
             //Cible le produit à modifier
             productToModify = products.closest('article')
             productToModifyId = productToModify.dataset.id
             productToModifyColor = productToModify.dataset.color
-
-            //Modification dans le local storage
-            let foundProduct = cart.find(p => p.id == productToModifyId && p.color == productToModifyColor);
-            if (foundProduct != undefined) {
-                foundProduct.quantity = products.value
-                localStorage.setItem("productToCart", JSON.stringify(cart));
-                totalQuantity();
-                location.reload();
+            //On vérifie que la valeur est bien comprise entre 1 et 100
+            if (products.value > 0 && products.value <= 100) {
+                //Modification dans le local storage
+                let foundProduct = inLocalStorage.find(p => p.id == productToModifyId && p.color == productToModifyColor)
+                if (foundProduct != undefined) {
+                    foundProduct.quantity = products.value
+                    localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
+                    totalQuantity()
+                    updateTotalPrice(productsData)
+                }
+            } else {
+                alert("Veuillez sélectionner une quantité comprise entre 1 et 100.")
             }
         })
     }
 }
 
 /** Supprimer un produit */
-function deleteProduct(qty, prc) {
-    let cart = JSON.parse(localStorage.getItem("productToCart"));
-
+function deleteProduct(productsData) {
     // Cibler les boutons suppr
     let deleteBtn = document.querySelectorAll(".deleteItem")
     // Pour chaque bouton, au clic ..
@@ -143,13 +149,11 @@ function deleteProduct(qty, prc) {
             const productToDeleteId = productToDelete.dataset.id
             const productToDeleteColor = productToDelete.dataset.color
             //Cible et supprime le produit dans le LocalStorage
-            let productToRemove = cart.filter((item) => item.id !== productToDeleteId || item.color !== productToDeleteColor);
-            cart = productToRemove
-
-            localStorage.setItem("productToCart", JSON.stringify(cart));
-            totalQuantity();
-            //totalPrice(-qty, prc);
-            location.reload();
+            let productToRemove = inLocalStorage.filter((item) => item.id !== productToDeleteId || item.color !== productToDeleteColor);
+            inLocalStorage = productToRemove
+            localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
+            totalQuantity()
+            updateTotalPrice(productsData)
         })
     }
 }
@@ -157,24 +161,44 @@ function deleteProduct(qty, prc) {
 
 /** Quantité totale du panier */
 function totalQuantity() {
-    let cart = JSON.parse(localStorage.getItem("productToCart"));
     let total = 0
-    for (let products of cart) {
+    for (let products of inLocalStorage) {
         total += parseInt(products.quantity)
     }
     let totalQuantity = document.getElementById('totalQuantity')
     totalQuantity.innerHTML = total
 }
 
+/** Prix total du panier */
 total = 0;
-function totalPrice(qty, prc) {
-    productsPrice = qty * prc
+function totalPrice(data, item) {
+
+    productsPrice = item.quantity * data.price
     total += productsPrice
     let totalPrice = document.getElementById('totalPrice')
     totalPrice.innerHTML = total
-
 }
 
+/** Actualisation du prix total du panier après modification ou suppression */
+function updateTotalPrice(productsData) {
+    let updatedTotal = 0;
+    // Récupération id/qty des produits dans le Local Storage
+    for (const item of inLocalStorage) {
+        const idLocalStorage = item.id
+        const qtyLocalStorage = item.quantity
+        // On trouve l'id identique dans le tableaux de l'API
+        const findProducts = productsData.find((element) => element._id === idLocalStorage)
+        // Si même id, on recalcule le prix total
+        if (findProducts) {
+            const productsPrice = findProducts.price * qtyLocalStorage
+            updatedTotal += productsPrice
+        }
+        let totalPrice = document.getElementById('totalPrice')
+        totalPrice.innerHTML = updatedTotal
+    }
+}
+
+/** Envoi du formulaire */
 function sendForm() {
     //Récupération des champs formulaire
     const form = document.querySelector('.cart__order__form')
@@ -184,12 +208,11 @@ function sendForm() {
     const city = document.getElementById('city')
     const email = document.getElementById('email')
 
-    /** Récupérer les données formulaires */
-
-    //Au submit du formulire ...
+    //Au submit du formulaire ...
     form.addEventListener('submit', function (e) {
         e.preventDefault()
 
+        //Vérifier le formulaire
         checkForm()
 
         const contact = {
@@ -209,11 +232,16 @@ function sendForm() {
             contact, products
         }
 
+        //envoyer le formulaire
         sendPost(body)
+
+        localStorage.clear();
     })
 }
 
-function checkForm() {//Récupération des valeurs de chaque input
+/** Vérification du formulaire */
+function checkForm() {
+    //Récupération des valeurs de chaque input
     const firstNameValue = firstName.value.trim()
     const lastNameValue = lastName.value.trim()
     const addressValue = address.value.trim()
@@ -282,7 +310,7 @@ function checkForm() {//Récupération des valeurs de chaque input
     }
 }
 
-
+/** Envoi du formulaire */
 function sendPost(body) {
     fetch("http://localhost:3000/api/products/order", {
         method: 'POST',

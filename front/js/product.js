@@ -58,6 +58,7 @@ function fillProduct(product) {
         colorSelector.setAttribute('value', color)
         productColorSelector.appendChild(colorSelector)
     }
+
 }
 
 function addToCart(selectedOptions) {
@@ -83,8 +84,8 @@ function addToCart(selectedOptions) {
 }
 
 function selectedProduct() {
-    var selectedColor = document.getElementById("colors").value
-    var selectedQuantity = document.getElementById("quantity").value
+    let selectedColor = document.getElementById("colors").value
+    let selectedQuantity = document.getElementById("quantity").value
 
     let selectedOptions = {
         id: id,
@@ -95,9 +96,11 @@ function selectedProduct() {
     console.log(selectedOptions)
 
     // si couleur ou quantité bien rempli, on ajoute au panier sinon alerte
-    if (selectedColor != "--SVP, choisissez une couleur --" && selectedQuantity != "0") {
-        addToCart(selectedOptions)
-        alert("Produit ajouté au panier !")
+    if (selectedColor != "" && selectedQuantity != "0") {
+        if (selectedQuantity > 0 && selectedQuantity <= 100) {
+            addToCart(selectedOptions)
+            alert("Produit ajouté au panier !")
+        } else { alert("Veuillez sélectionner une quantité comprise entre 1 et 100.") }
     } else {
         alert("Veuillez sélectionner une couleur et/ou une quantité")
     }
