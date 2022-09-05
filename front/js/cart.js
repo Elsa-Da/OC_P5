@@ -14,8 +14,6 @@ if (inLocalStorage) {
                 function (data) {
                     displayProduct(data, item)
                     totalPrice(data, item)
-                    modifyProductQuantity()
-                    deleteProduct()
                 })
             .catch(function (error) {
                 console.log('fetch error', error);
@@ -91,6 +89,21 @@ function displayProduct(data, item) {
     productQty.setAttribute('max', '100')
     productQty.setAttribute('value', itemQty)
     cartItemQty.appendChild(productQty)
+    //Evènement d'écoute input quantité
+    productQty.addEventListener('change', function (event) {
+        //Cible la quantité modifiée dans le DOM
+        let inputQty = productQty.value
+        inputQty = event.target.value
+        //Cible le produit à modifier
+        productToModify = productQty.closest('article')
+        productToModifyId = productToModify.dataset.id
+        productToModifyColor = productToModify.dataset.color
+        if (inputQty > 0 && inputQty <= 100) {
+            modifyProductQuantity(inputQty, productToModifyId, productToModifyColor)
+        } else {
+            alert("Veuillez sélectionner une quantité comprise entre 1 et 100.")
+        }
+    })
 
     const cartItemSettingsDelete = document.createElement('div')
     cartItemSettingsDelete.classList.add('cart__item__content__settings__delete')
@@ -100,58 +113,37 @@ function displayProduct(data, item) {
     cartItemDelete.classList.add('deleteItem')
     cartItemDelete.innerHTML = "Supprimer"
     cartItemSettingsDelete.appendChild(cartItemDelete)
+    cartItemDelete.addEventListener('click', function () {
+        //Cible et supprime le produit dans le DOM
+        let productToDelete = cartItemDelete.closest('article')
+        productToDelete.remove()
+        const productToDeleteId = productToDelete.dataset.id
+        const productToDeleteColor = productToDelete.dataset.color
+        deleteProduct(productToDeleteId, productToDeleteColor)
+    })
 }
 
 /** Modifier la quantité d'un produit*/
-function modifyProductQuantity() {
-    // Cibler les input de quantité
-    const quantityToCheck = document.querySelectorAll('.itemQuantity')
-    // Pour chaque input, au clic ..
-    for (let products of quantityToCheck) {
-        products.addEventListener('change', function (event) {
-            //Cible la quantité modifiée dans le DOM
-            products.value = event.target.value
-            //Cible le produit à modifier
-            productToModify = products.closest('article')
-            productToModifyId = productToModify.dataset.id
-            productToModifyColor = productToModify.dataset.color
-            //On vérifie que la valeur est bien comprise entre 1 et 100
-            if (products.value > 0 && products.value <= 100) {
-                //Modification dans le local storage
-                let foundProduct = inLocalStorage.find(p => p.id == productToModifyId && p.color == productToModifyColor)
-                if (foundProduct != undefined) {
-                    foundProduct.quantity = products.value
-                    localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
-                    totalQuantity()
-                    updateTotalPrice()
-                }
-            } else {
-                alert("Veuillez sélectionner une quantité comprise entre 1 et 100.")
-            }
-        })
+function modifyProductQuantity(inputQty, productToModifyId, productToModifyColor) {
+    //Modification dans le local storage
+    let foundProduct = inLocalStorage.find(p => p.id == productToModifyId && p.color == productToModifyColor)
+    if (foundProduct != undefined) {
+        foundProduct.quantity = inputQty
+        localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
+        totalQuantity()
+        updateTotalPrice()
     }
 }
 
+
 /** Supprimer un produit */
-function deleteProduct() {
-    // Cibler les boutons suppr
-    let deleteBtn = document.querySelectorAll(".deleteItem")
-    // Pour chaque bouton, au clic ..
-    for (let products of deleteBtn) {
-        products.addEventListener('click', function () {
-            //Cible et supprime le produit dans le DOM
-            let productToDelete = products.closest('article')
-            productToDelete.remove()
-            const productToDeleteId = productToDelete.dataset.id
-            const productToDeleteColor = productToDelete.dataset.color
-            //Cible et supprime le produit dans le LocalStorage
-            let productToRemove = inLocalStorage.filter((item) => item.id !== productToDeleteId || item.color !== productToDeleteColor)
-            inLocalStorage = productToRemove
-            localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
-            totalQuantity()
-            updateTotalPrice()
-        })
-    }
+function deleteProduct(productToDeleteId, productToDeleteColor) {
+    //Cible et supprime le produit dans le LocalStorage
+    let productToRemove = inLocalStorage.filter((item) => item.id !== productToDeleteId || item.color !== productToDeleteColor)
+    inLocalStorage = productToRemove
+    localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
+    totalQuantity()
+    updateTotalPrice()
 }
 
 /** Quantité totale du panier */
