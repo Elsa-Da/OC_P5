@@ -266,8 +266,8 @@ function checkForm() {//Récupération des valeurs de chaque input
 
     //Vérifications des valeurs de chaque input
     const textRegex = /^[A-Za-z' -]{2,20}$/;
-    const addressRegex = /^[A-Za-z0-9' -]{5,40}$/
-    const emailRegex = /[a-z0-9]+@[a-z]+\.[a-z]{2,3}/;
+    const addressRegex = /^[A-Za-z0-9' -,]{5,40}$/
+    const emailRegex = /[a-z0-9_.-]+@[a-z_.-]+\.[a-z]{2,3}/;
 
     firstNameError.innerHTML = "";
     lastNameError.innerHTML = "";
@@ -319,7 +319,7 @@ function sendPost(body) {
             // lorsqu'on récupère la réponse du back on inscrit l'ID dans l'URL de redirection pour la confirmation de commande
             console.log(value);
             let orderId = value.orderId
-            window.location.replace('./confirmation.html?' + orderId);
+            window.location.replace('./confirmation.html?id=' + orderId);
         })
         .catch(function (error) {
             console.log('fetch error', error);
