@@ -1,10 +1,10 @@
 /** Récupération des données du localStorage */
-let inLocalStorage = JSON.parse(localStorage.getItem("productToCart"));
-console.log(inLocalStorage);
+let productsInLocalStorage = JSON.parse(localStorage.getItem("productToCart"));
+//console.log(productsInLocalStorage);
 
 //Récupération données de l'API
-if (inLocalStorage) {
-    for (const item of inLocalStorage) {
+if (productsInLocalStorage) {
+    for (const item of productsInLocalStorage) {
         //Récupération données de l'API
         fetch("http://localhost:3000/api/products/" + item.id)
             .then(function (response) {
@@ -22,7 +22,6 @@ if (inLocalStorage) {
     totalQuantity();
     sendForm();
 }
-
 
 function displayProduct(data, item) {
 
@@ -113,6 +112,7 @@ function displayProduct(data, item) {
     cartItemDelete.classList.add('deleteItem')
     cartItemDelete.innerHTML = "Supprimer"
     cartItemSettingsDelete.appendChild(cartItemDelete)
+    //Evènement d'écoute bouton supprimer
     cartItemDelete.addEventListener('click', function () {
         //Cible et supprime le produit dans le DOM
         let productToDelete = cartItemDelete.closest('article')
@@ -121,34 +121,39 @@ function displayProduct(data, item) {
         const productToDeleteColor = productToDelete.dataset.color
         deleteProduct(productToDeleteId, productToDeleteColor)
     })
+
+    const totalPriceCart = document.getElementById('totalPrice')
+    totalPriceCart.innerHTML = 0
 }
 
 /** Modifier la quantité d'un produit*/
 function modifyProductQuantity(inputQty, productToModifyId, productToModifyColor) {
+    let inLocalStorage = JSON.parse(localStorage.getItem("productToCart"))
     //Modification dans le local storage
     let foundProduct = inLocalStorage.find(p => p.id == productToModifyId && p.color == productToModifyColor)
     if (foundProduct != undefined) {
         foundProduct.quantity = inputQty
         localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
-        totalQuantity()
-        updateTotalPrice()
+        //totalQuantity()
+        location.reload()
     }
 }
 
-
 /** Supprimer un produit */
 function deleteProduct(productToDeleteId, productToDeleteColor) {
+    let inLocalStorage = JSON.parse(localStorage.getItem("productToCart"))
     //Cible et supprime le produit dans le LocalStorage
     let productToRemove = inLocalStorage.filter((item) => item.id !== productToDeleteId || item.color !== productToDeleteColor)
     inLocalStorage = productToRemove
     localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
-    totalQuantity()
-    updateTotalPrice()
+    //totalQuantity()
+    location.reload()
 }
 
 /** Quantité totale du panier */
 function totalQuantity() {
     let total = 0
+    let inLocalStorage = JSON.parse(localStorage.getItem("productToCart"))
     for (let products of inLocalStorage) {
         total += parseInt(products.quantity)
     }
@@ -156,44 +161,28 @@ function totalQuantity() {
     totalQuantity.innerHTML = total
 }
 
-/** Prix total du panier */
-total = 0;
+
+//Prix total du panier//
+function totalPrice(data, item) {
+    let total = parseInt(document.getElementById('totalPrice').innerHTML)
+    console.log(total)
+    productsPrice = item.quantity * data.price
+    console.log(productsPrice)
+    total += productsPrice
+    document.getElementById('totalPrice').innerHTML = total
+}
+
+/** AUTRE TENTATIVE PRIX TOTAL
+ * let totalProductsPrices = []
 function totalPrice(data, item) {
     productsPrice = item.quantity * data.price
-    total += productsPrice
-    let totalPrice = document.getElementById('totalPrice')
-    totalPrice.innerHTML = total
-
-}
-
-/** Réactualisation du prix après modification ou suppression */
-function updateTotalPrice() {
-    let updatedTotal = 0
-    //Récupération des produits qu'il y a dans le panier
-    for (const product of inLocalStorage) {
-        const idLocalStorage = product.id
-        const qtyLocalStorage = product.quantity
-        //Récupération données API
-        fetch("http://localhost:3000/api/products/")
-            .then(function (response) {
-                return response.json();
-            })
-            .then(function (ApiData) {
-                const findProducts = ApiData.find((element) => element._id === idLocalStorage)
-                //Si même id dans panier + api on recalcule le prix
-                if (findProducts) {
-                    const productsPrice = findProducts.price * qtyLocalStorage
-                    updatedTotal += productsPrice
-                    let updatedTotalPrice = document.getElementById('totalPrice')
-                    updatedTotalPrice.innerHTML = updatedTotal
-                }
-            })
-            .catch(function (error) {
-                console.log('fetch error', error);
-            });
+    totalProductsPrices.push(productsPrice)
+    let sum = 0
+    for (let i = 0; i < totalProductsPrices.length; i++) {
+        sum += totalProductsPrices[i];
     }
-}
-
+    document.getElementById('totalPrice').innerHTML = sum
+}*/
 
 function sendForm() {
     //Récupération des champs formulaire
@@ -259,7 +248,7 @@ function checkForm() {//Récupération des valeurs de chaque input
     //Vérifications des valeurs de chaque input
     const textRegex = /^[A-Za-z' -]{2,20}$/;
     const addressRegex = /^[A-Za-z0-9' -,]{5,40}$/
-    const emailRegex = /[a-z0-9_.-]+@[a-z_.-]+\.[a-z]{2,3}/;
+    const emailRegex = /[a-z0-9_.-]+@[a-z0-9_.-]+\.[a-z]{2,3}/;
 
     firstNameError.innerHTML = "";
     lastNameError.innerHTML = "";
