@@ -1,6 +1,6 @@
 /** Récupération des données du localStorage */
-let productsInLocalStorage = JSON.parse(localStorage.getItem("productToCart"));
-//console.log(productsInLocalStorage);
+let productsInLocalStorage = JSON.parse(localStorage.getItem("productToCart"))
+//console.log(productsInLocalStorage)
 
 //Récupération données de l'API
 if (productsInLocalStorage) {
@@ -8,7 +8,7 @@ if (productsInLocalStorage) {
         //Récupération données de l'API
         fetch("http://localhost:3000/api/products/" + item.id)
             .then(function (response) {
-                return response.json();
+                return response.json()
             })
             .then(
                 function (data) {
@@ -16,11 +16,11 @@ if (productsInLocalStorage) {
                     totalPrice(data, item)
                 })
             .catch(function (error) {
-                console.log('fetch error', error);
-            });
+                console.log('fetch error', error)
+            })
     }
-    totalQuantity();
-    sendForm();
+    totalQuantity()
+    sendForm()
 }
 
 function displayProduct(data, item) {
@@ -121,9 +121,6 @@ function displayProduct(data, item) {
         const productToDeleteColor = productToDelete.dataset.color
         deleteProduct(productToDeleteId, productToDeleteColor)
     })
-
-    const totalPriceCart = document.getElementById('totalPrice')
-    totalPriceCart.innerHTML = 0
 }
 
 /** Modifier la quantité d'un produit*/
@@ -134,7 +131,6 @@ function modifyProductQuantity(inputQty, productToModifyId, productToModifyColor
     if (foundProduct != undefined) {
         foundProduct.quantity = inputQty
         localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
-        //totalQuantity()
         location.reload()
     }
 }
@@ -146,7 +142,6 @@ function deleteProduct(productToDeleteId, productToDeleteColor) {
     let productToRemove = inLocalStorage.filter((item) => item.id !== productToDeleteId || item.color !== productToDeleteColor)
     inLocalStorage = productToRemove
     localStorage.setItem("productToCart", JSON.stringify(inLocalStorage))
-    //totalQuantity()
     location.reload()
 }
 
@@ -165,24 +160,10 @@ function totalQuantity() {
 //Prix total du panier//
 function totalPrice(data, item) {
     let total = parseInt(document.getElementById('totalPrice').innerHTML)
-    console.log(total)
     productsPrice = item.quantity * data.price
-    console.log(productsPrice)
     total += productsPrice
     document.getElementById('totalPrice').innerHTML = total
 }
-
-/** AUTRE TENTATIVE PRIX TOTAL
- * let totalProductsPrices = []
-function totalPrice(data, item) {
-    productsPrice = item.quantity * data.price
-    totalProductsPrices.push(productsPrice)
-    let sum = 0
-    for (let i = 0; i < totalProductsPrices.length; i++) {
-        sum += totalProductsPrices[i];
-    }
-    document.getElementById('totalPrice').innerHTML = sum
-}*/
 
 function sendForm() {
     //Récupération des champs formulaire
@@ -194,7 +175,6 @@ function sendForm() {
     const email = document.getElementById('email')
 
     /** Récupérer les données formulaires */
-
     //Au submit du formulire ...
     form.addEventListener('submit', function (e) {
         e.preventDefault()
@@ -214,6 +194,7 @@ function sendForm() {
 
             // ... et d'un tableau contenant les produits dans le panier de l'user
             let products = []
+            let inLocalStorage = JSON.parse(localStorage.getItem("productToCart"))
             for (item of inLocalStorage) {
                 products.push(item.id)
             }
@@ -221,10 +202,10 @@ function sendForm() {
             const body = {
                 contact, products
             }
+
             // On envoie l'objet et le tableau au back & on vide le local storage
             sendPost(body)
-            localStorage.removeItem("productToCart");
-
+            localStorage.removeItem("productToCart")
         } else {
             checkForm()
         }
@@ -244,44 +225,44 @@ function checkForm() {//Récupération des valeurs de chaque input
     const cityError = document.getElementById('cityErrorMsg')
     const emailError = document.getElementById('emailErrorMsg')
 
-
     //Vérifications des valeurs de chaque input
-    const textRegex = /^[A-Za-z' -]{2,20}$/;
+    const textRegex = /^[A-Za-z' -]{2,20}$/
     const addressRegex = /^[A-Za-z0-9' -,]{5,40}$/
-    const emailRegex = /[a-z0-9_.-]+@[a-z0-9_.-]+\.[a-z]{2,3}/;
+    const emailRegex = /[a-z0-9_.-]+@[a-z0-9_.-]+\.[a-z]{2,3}/
 
-    firstNameError.innerHTML = "";
-    lastNameError.innerHTML = "";
-    addressError.innerHTML = "";
-    cityError.innerHTML = "";
-    emailError.innerHTML = "";
+    firstNameError.innerHTML = ""
+    lastNameError.innerHTML = ""
+    addressError.innerHTML = ""
+    cityError.innerHTML = ""
+    emailError.innerHTML = ""
 
+    let verifInput = true
     if (!textRegex.test(firstNameValue)) {
         firstNameError.innerHTML = "Veuillez saisir un prénom valide."
-        return false
+        verifInput = false
     }
 
     if (!textRegex.test(lastNameValue)) {
         lastNameError.innerHTML = "Veuillez saisir un nom de famille valide."
-        return false
+        verifInput = false
     }
 
     if (!addressRegex.test(addressValue)) {
         addressError.innerHTML = "Veuillez saisir une adresse valide."
-        return false
+        verifInput = false
     }
 
     if (!textRegex.test(cityValue)) {
         cityError.innerHTML = "Veuillez saisir un nom de ville valide."
-        return false
+        verifInput = false
     }
 
     if (emailValue.length < 6 || !emailRegex.test(emailValue)) {
         emailError.innerHTML = "Veuillez saisir un e-mail valide."
-        return false
+        verifInput = false
     }
 
-    return true;
+    return verifInput
 }
 
 /** Fonction d'envoi des infos au backend */
@@ -294,15 +275,15 @@ function sendPost(body) {
         body: JSON.stringify(body)
     })
         .then(function (response) {
-            return response.json();
+            return response.json()
         })
         .then(function (value) {
             // lorsqu'on récupère la réponse du back on inscrit l'ID dans l'URL de redirection pour la confirmation de commande
-            console.log(value);
+            console.log(value)
             let orderId = value.orderId
-            window.location.replace('./confirmation.html?id=' + orderId);
+            window.location.replace('./confirmation.html?id=' + orderId)
         })
         .catch(function (error) {
-            console.log('fetch error', error);
-        });
+            console.log('fetch error', error)
+        })
 }

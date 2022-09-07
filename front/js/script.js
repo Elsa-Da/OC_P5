@@ -1,8 +1,7 @@
 
 
 
-/** Création fonction qui permet de récupérer les données de l'API
- */
+/** Création fonction qui permet de récupérer les données de l'API */
 fetch("http://localhost:3000/api/products")
     .then(function (response) {
         return response.json();
@@ -41,5 +40,4 @@ function createProductCard(product) {
     productLink.appendChild(productCard)
 
     return productLink
-
 }

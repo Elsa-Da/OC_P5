@@ -1,46 +1,46 @@
 /** Récupération ID du produit */
-let params = new URLSearchParams(document.location.search);
-let id = params.get("id");
+let params = new URLSearchParams(document.location.search)
+let id = params.get("id")
 
 /** Fonction pour récupérer les données du produit */
 fetch(`http://localhost:3000/api/products/${id}`)
     .then(function (response) {
-        return response.json();
+        return response.json()
     })
     .then(function (productData) {
-        fillProduct(productData);
+        fillProduct(productData)
 
         // Changer le titre de la page par le nom du produit
-        document.title = productData.name;
+        document.title = productData.name
 
         /**  Au clic du bouton "Ajouter au panier", le produit s'ajoute*/
-        productToCart = document.getElementById('addToCart');
+        productToCart = document.getElementById('addToCart')
 
         productToCart.addEventListener("click", function () {
             //Récupération des options choisies
             let selectedOptions = selectedProduct()
             //Ajout au panier
-            selectedOptions ? addToCart(selectedOptions) : null;
-        });
+            selectedOptions ? addToCart(selectedOptions) : null
+        })
     }
     )
     .catch(function (error) {
-        console.log('fetch error', error);
+        console.log('fetch error', error)
         setTimeout(function () {
-            alert("Ce produit n'existe plus");
-            window.location.replace("index.html");
+            alert("Ce produit n'existe plus")
+            window.location.replace("index.html")
         })
-    });
+    })
 
 
 /** Fonction pour remplir les données dans la fiche produit */
 function fillProduct(product) {
 
     // Elements de la page à remplir
-    const productImgContainer = document.querySelector('.item__img');
-    const productName = document.getElementById('title');
-    const productPrice = document.getElementById('price');
-    const productDescription = document.getElementById('description');
+    const productImgContainer = document.querySelector('.item__img')
+    const productName = document.getElementById('title')
+    const productPrice = document.getElementById('price')
+    const productDescription = document.getElementById('description')
 
     //pour les images
     const productImg = document.createElement('img')
@@ -49,9 +49,9 @@ function fillProduct(product) {
     productImgContainer.appendChild(productImg)
 
     //pour le texte
-    productName.innerHTML = product.name;
-    productPrice.innerHTML = product.price;
-    productDescription.innerHTML = product.description;
+    productName.innerHTML = product.name
+    productPrice.innerHTML = product.price
+    productDescription.innerHTML = product.description
 
     //pour les couleurs
     for (const color of product.colors) {
@@ -61,13 +61,12 @@ function fillProduct(product) {
         colorSelector.setAttribute('value', color)
         productColorSelector.appendChild(colorSelector)
     }
-
 }
 
 /** Fonction pour ajouter le produit au panier */
 function addToCart(selectedOptions) {
     // Récupération des produits dans le panier
-    let cart = JSON.parse(localStorage.getItem("productToCart"));
+    let cart = JSON.parse(localStorage.getItem("productToCart"))
 
     //S'il y a déjà des produits dans le panier
     if (cart) {
@@ -82,17 +81,17 @@ function addToCart(selectedOptions) {
         }
         if (!cartStorageUpdate) {
             //si non, ajouter nouveau produit
-            cart.push(selectedOptions);
+            cart.push(selectedOptions)
         }
     } else {
         //S'il n'y a pas de produits dans le panier, créer un tableau puis push le premier produit
-        cart = [];
-        cart.push(selectedOptions);
+        cart = []
+        cart.push(selectedOptions)
     }
 
     // Enregistrer à nouveau le local storage
-    localStorage.setItem("productToCart", JSON.stringify(cart));
-    alert("Produit ajouté au panier !");
+    localStorage.setItem("productToCart", JSON.stringify(cart))
+    alert("Produit ajouté au panier !")
 }
 
 /** Fonction pour récupérer les options sélectionnées par le client */
@@ -112,12 +111,12 @@ function selectedProduct() {
     // si couleur ou quantité bien rempli, on ajoute au panier sinon alerte
     if (!(selectedColor != "" && selectedQuantity != "0")) {
         alert("Veuillez sélectionner une couleur et/ou une quantité")
-        return;
+        return
     }
 
     if (!(selectedQuantity > 0 && selectedQuantity <= 100)) {
         alert("Veuillez sélectionner une quantité comprise entre 1 et 100.")
-        return;
+        return
     }
 
     return selectedOptions
